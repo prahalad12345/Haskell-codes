@@ -1,0 +1,185 @@
+higher order functions, folds etc.
+
+two ways of creating data types
+data and type
+type are used for preexisting data types
+there is also newtype that we have not done in much detail
+
+data Direction = Left | Right
+data Shape a = Circle a | Rectangle a a
+data Tree a = Nil | Node a (Tree a) (Tree a)
+
+search insert and delete in binary search Tree
+
+pure functions are actual mathematical functions
+IO is a side effect and is not pure at all
+
+there are some IO functions like
+getChar putChar getLine putStr putStrLn print
+
+main :: IO String -> IO ()
+main = do x <- getLine 
+          putStrLn x
+
+sequence and interact
+
+if we need to take input from the user again and again
+then we need to use the interact function.
+
+interact (unlines ((map.func) (lines)))
+interact (unlines ((map.show.length) lines)
+here the function func takes a string and returns a string
+
+main do n <- getLine
+        print (show.length) n
+        main
+
+what is the type of an IO function. it is the type IO and the type of last line 
+main:: IO ()
+main2 = do n <- getLine
+           print ((show.length) n)
+           main2
+
+if the function is returning something then the return type might be something else
+like instead of IO () it might be IO Int or IO String etc
+
+what does mapM do??
+it maps a monadic function onto a tarversable like a list
+map putStrLn.show [1,2,3] this will give us a list of IO actions
+
+sequence takes a list of IO/Monadic actions and makes an IO of list or Monad of list
+[IO Int] to IO [Int]
+
+sequence :: (Traversable t, Monad m) => t (m a) -> m (t a)
+Prelude> sequence (map (putStr.show) [1..10])
+12345678910[(),(),(),(),(),(),(),(),(),()]
+mapM :: (Traversable t, Monad m) => (a -> m b) -> t a -> m (t b) 
+Prelude> mapM (putStr.show) [1,2,3]
+123[(),(),()]
+Prelude> mapM_ (putStr.show) [1,2,3]
+123
+
+file operations
+
+get the filename through getline of get args
+
+handle <- openFile filename ReadMode
+contents <- hGetContents handle
+hclose handle
+
+FUNCTORS
+
+functor is a wrapping paper. You have a toy you need to gift someone so you wrap it in the paper when you will gift it.
+The wrappingpaper can be a Maybe type a List an IO etc.
+
+map identity = identity 
+(map f).(map g) = map f.g
+
+categories is a set of objects like sets of integers are the objects and there are infinite amount of these
+lets say category alpha contains all possible sets of integers
+there is another similar category beta
+let there be a subset of beta containing all the list that can be made using the number 1
+similarly there is such a subset for number 2 as well
+
+the elements in alpha are mapped to each other inside alpha via some function (say function +1)
+
+a dictionary is an example of a flat space or a flat map
+inside the category alpha the function mappings are a flat map
+arrows are mappings within a category.
+now the question is can we map arrows of a of category alpha to arrows of other category beta
+mappings from one flat space (arrows) in alpha to another flat space in beta is an example of a flat map
+now this flat map is a functor.
+
+kind are defined for functors/mappings of arrows
+
+func n = if iseven n then n else (show n)
+this type of function doesn't have asingle return type so we need tp define a data type using Either
+
+fmap f mx = do x <- mx
+               return f x
+
+this can be used to prove that IO is a functor
+
+prove that Either A B is a functor
+the kind of Either A B will be * -> * -> *
+is haskell everything is curried so with one parameter given like
+Either A where A is given it will be * -> *
+
+kind of -> is * -> * -> *
+so -> A is a functor having kind * -> *
+
+given a function is wrapped form (m f)
+f = (+1) is wrapped inside a monad
+f :: Maybe (Int -> Int)
+
+pure (+) <*> (Just 2) <*> (Just 3) = Just 5
+pipelining
+
+Prelude> pure (+) <*> (Just 2) <*> (Just 3)
+Just 5 
+Prelude> pure (*) <*> (Just 2) <*> (Just 3) 
+Just 6
+Prelude> pure (div) <*> (Just 2) <*> (Just 3)
+Just 0
+Prelude> pure (quot) <*> (Just 2) <*> (Just 3)
+Just 0
+Prelude> Nothing <*> (Just 2)
+Nothing
+
+<*> is apply
+pure is used wrap the function f in the monad
+
+(+) is Int -> Int will become Maybe(Int->Int)
+
+>>= is called the bind symbol
+Prelude> :type (>>=)
+(>>=) :: Monad m => m a -> (a -> m b) -> m b
+Prelude> :type (<*>)
+(<*>) :: Applicative f => f (a -> b) -> f a -> f b
+Prelude> :type (pure)
+(pure) :: Applicative f => a -> f a
+Prelude> :type (:)
+(:) :: a -> [a] -> [a]
+
+eval (Val x) = Just a
+eval (Div e1 e2) = eval e1 >>= \x ->
+                   eval e2 >>= \y ->
+                       safediv x y
+
+eval' (Val x) = Just x
+eval' (Div e1 e2) = do x <- e1
+                       y <- e2
+                       return safediv x y 
+
+pairs [Int] -> [Int] -> [(Int, Int)]
+pairs xs ys = do x <- xs
+                 y <- ys
+                 return (x,y)
+
+lets define bind for a list
+return x = [x]
+(>>=) [] _ = []
+(>>=) xs f = [y | x <- xs, y <- ys]
+here we can say that bind is a flip concatMap
+
+return' x = [x]
+(>>>=) [] _ = []
+(>>>=) xs f = [y | x <- xs, y <- f x]
+
+pairs xs ys = do xs >>>= \x ->
+                 ys >>>= \y ->
+                 return' (x, y)
+
+*Main> pairs [1,2] [3,4]
+*Main> [(1,3), (1,4), (2,3), (2,4)]
+
+A monad on x is a monoid in the category of endofunctors on xs
+A monoid is any set defined by a binary associative operation and an identity relation
+
+set = non negative integers
+operation = + is our assosiative binary operation
+identity is 0 because x + 0 = x
+
+
+                
+
